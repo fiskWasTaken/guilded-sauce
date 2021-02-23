@@ -9,6 +9,7 @@
     "@types/twitter": "^1.7.0",
     "mongodb": "^3.6.4",
     "ts-node": "^9.1.1",
-    "twitter": "^1.7.1"
+    "twitter": "^1.7.1",
+    "typescript": "^4.1.5"
   }
 }
