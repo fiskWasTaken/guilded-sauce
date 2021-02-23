@@ -171,7 +171,7 @@ function interceptTwitter(message: Message, callback) {
     nodes.filter((node: any) => node.type === 'paragraph').forEach((node: any) => {
         node.nodes.forEach((leaf: any) => {
             if (leaf.type === "link") {
-                const result = leaf.data.href.match(/https:\/\/twitter.com\/(.*)\/status\/(.*)/i);
+                const result = leaf.data.href.match(/https:\/\/twitter.com\/(.*)\/status\/([0-9]+)/i);
 
                 if (result) {
                     callback(...result);
