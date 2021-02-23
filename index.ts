@@ -40,7 +40,7 @@ guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
 guilded.on("messageCreate", message => {
     interceptTwitter(message, function (link, username, id) {
-        twitter.get(`statuses/show/${id}`, {}, async function (error: any, tweet: ResponseData, response: any) {
+        twitter.get(`statuses/show/${id}`, {tweet_mode: 'extended'}, async function (error: any, tweet: ResponseData, response: any) {
             if (error !== null) {
                 console.log(error);
                 return;
