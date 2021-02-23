@@ -47,6 +47,12 @@ guilded.on("messageCreate", message => {
             }
 
             const targetChannel = locateChannel(message);
+
+            if (!targetChannel) {
+                console.log("no channel target");
+                return;
+            }
+
             const attachments: UploadResponse[] = [];
             const errors = [];
 
@@ -65,11 +71,6 @@ guilded.on("messageCreate", message => {
 
             if (attachments.length == 0) {
                 console.log("no media to upload, stop");
-                return;
-            }
-
-            if (!targetChannel) {
-                console.log("no channel target");
                 return;
             }
 
