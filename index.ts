@@ -80,7 +80,7 @@ guilded.on("messageCreate", message => {
                     description: `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id} ${tweet.created_at}`,
                     src: attachments[0].url,
                     tags: [tweet.user.screen_name],
-                    title: `${tweet.user.name}: ${tweet.text}`.substr(0,80),
+                    title: `${tweet.user.name}: ${tweet.full_text}`.substr(0,80),
                     type: "image"
                 });
 
