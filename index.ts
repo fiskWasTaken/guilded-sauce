@@ -39,7 +39,7 @@ const twitter = new Twitter(options.twitter);
 guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
 guilded.on("messageCreate", message => {
-    interceptTwitter(message, function (link, username, id) {
+    interceptTwitter(message, function (link: string, username: string, id: string) {
         twitter.get(`statuses/show/${id}`, {tweet_mode: 'extended'}, async function (error: any, tweet: ResponseData, response: any) {
             if (error !== null) {
                 console.log(error);
@@ -77,7 +77,7 @@ guilded.on("messageCreate", message => {
             try {
                 const resp = await media(targetChannel, {
                     additionalInfo: {},
-                    description: `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id} ${tweet.created_at}`,
+                    description: `https://twitter.com/${tweet.user.screen_name}/status/${id} ${tweet.created_at}`,
                     src: attachments[0].url,
                     tags: [tweet.user.screen_name],
                     title: `${tweet.user.name}: ${tweet.full_text}`.substr(0,80),
@@ -103,28 +103,6 @@ guilded.on("messageCreate", message => {
             } catch (e) {
                 console.log(e)
             }
-
-            // post in-place example; disabled atm until it's relevant.
-
-            // const nodes = attachments.map((result: UploadResponse) => imageUrlToNode(result.url));
-
-            // const doc = {
-            //     messageId: uuidv4(),
-            //     content: {
-            //         object: "value",
-            //         document: {
-            //             object: "document",
-            //             data: {},
-            //             nodes: nodes
-            //         }
-            //     }
-            // }
-            //
-            // try {
-            //     send(message.channel, doc);
-            // } catch (e) {
-            //     console.log(e)
-            // }
         });
     })
 })
