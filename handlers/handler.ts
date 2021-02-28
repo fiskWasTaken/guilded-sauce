@@ -8,5 +8,6 @@ export interface HandlerResult {
 export abstract class Handler {
     id: string = "none";
 
+    public constructor(public options: object) {}
     abstract handle(url: string): Promise<HandlerResult>;
 }

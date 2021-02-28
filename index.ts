@@ -3,8 +3,6 @@ import Message from "@guildedjs/guilded.js/types/structures/Message";
 import DMChannel from "@guildedjs/guilded.js/types/structures/channels/DMChannel";
 import TextChannel from "@guildedjs/guilded.js/types/structures/channels/TextChannel";
 import PartialChannel from "@guildedjs/guilded.js/types/structures/channels/PartialChannel";
-import Twitter = require("twitter");
-import TwitterHandler from "./handlers/twitter";
 import {HandlerResult} from "./handlers/handler";
 
 interface UploadResponse {
@@ -33,10 +31,13 @@ interface MediaReply {
 
 const options = require('./config.json');
 const guilded = new Client();
-const twitter = new Twitter(options.twitter);
 
-// todo: reflection loading
-const handlers = [new TwitterHandler(twitter)];
+const handlers = options.handlers.map(handler => {
+    const exp = require(`./handlers/${handler}`);
+    const h = new exp.default(options[handler] || {});
+    console.log(`Loaded handler '${h.id}'`);
+    return h;
+});
 
 guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
@@ -83,7 +84,7 @@ async function postMediaThread(channel: string, result: HandlerResult) {
             description: result.description,
             src: attachments[0].url,
             tags: result.tags,
-            title: result.title,
+            title: result.title.substr(0, 80),
             type: "image"
         });
 

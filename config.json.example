@@ -1,4 +1,7 @@
 {
+    "handlers": [
+        "twitter", "mastodon"
+    ],
     "guilded": {
         "email": "",
         "password": ""
