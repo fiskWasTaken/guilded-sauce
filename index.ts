@@ -1,12 +1,11 @@
 import {Client} from "@guildedjs/guilded.js"
 import Message from "@guildedjs/guilded.js/types/structures/Message";
-import {ResponseData} from "twitter";
-import {v4 as uuidv4} from 'uuid';
-import Twitter = require("twitter");
 import DMChannel from "@guildedjs/guilded.js/types/structures/channels/DMChannel";
 import TextChannel from "@guildedjs/guilded.js/types/structures/channels/TextChannel";
 import PartialChannel from "@guildedjs/guilded.js/types/structures/channels/PartialChannel";
-import Team from "@guildedjs/guilded.js/types/structures/Team";
+import Twitter = require("twitter");
+import TwitterHandler from "./handlers/twitter";
+import {HandlerResult} from "./handlers/handler";
 
 interface UploadResponse {
     url: string;
@@ -36,76 +35,78 @@ const options = require('./config.json');
 const guilded = new Client();
 const twitter = new Twitter(options.twitter);
 
+// todo: reflection loading
+const handlers = [new TwitterHandler(twitter)];
+
 guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
-guilded.on("messageCreate", message => {
-    interceptTwitter(message, function (link: string, username: string, id: string) {
-        twitter.get(`statuses/show/${id}`, {tweet_mode: 'extended'}, async function (error: any, tweet: ResponseData, response: any) {
-            if (error !== null) {
-                console.log(error);
-                return;
-            }
+guilded.on("messageCreate", async message => {
+    const targetChannel = parseChannels(message)[0];
 
-            const targetChannel = locateChannel(message);
+    if (!targetChannel) {
+        // no channel target, nothing to do
+        return;
+    }
 
-            if (!targetChannel) {
-                console.log("no channel target");
-                return;
-            }
+    try {
+        await postMediaThread(targetChannel, await resolveHandler(message));
+    } catch (e) {
+        console.log(e);
+    }
+})
 
-            const attachments: UploadResponse[] = [];
-            const errors = [];
+async function postMediaThread(channel: string, result: HandlerResult) {
+    const attachments: UploadResponse[] = [];
+    const errors = [];
 
-            for (const entity of tweet.extended_entities.media) {
-                try {
-                    attachments.push(await uploadFromUrl(entity.media_url));
-                } catch (e) {
-                    errors.push(e);
-                }
-            }
+    for (const url of result.media) {
+        try {
+            attachments.push(await uploadFromUrl(url));
+        } catch (e) {
+            errors.push(e);
+        }
+    }
 
-            if (errors.length > 0) {
-                console.log(`${errors.length} errors encountered`)
-                errors.forEach(e => console.log(e));
-            }
+    if (errors.length > 0) {
+        console.log(`${errors.length} errors encountered`)
+        errors.forEach(e => console.log(e));
+    }
 
-            if (attachments.length == 0) {
-                console.log("no media to upload, stop");
-                return;
-            }
+    if (attachments.length == 0) {
+        console.log("no media to upload, stop");
+        return;
+    }
+
+    try {
+        const resp = await media(channel, {
+            additionalInfo: {},
+            description: result.description,
+            src: attachments[0].url,
+            tags: result.tags,
+            title: result.title,
+            type: "image"
+        });
+
+        if (attachments.length > 1) {
+            const nodes = attachments.splice(1).map((result: UploadResponse) => imageUrlToCaptionedNode(result.url));
 
             try {
-                const resp = await media(targetChannel, {
-                    additionalInfo: {},
-                    description: `https://twitter.com/${tweet.user.screen_name}/status/${id} ${tweet.created_at}`,
-                    src: attachments[0].url,
-                    tags: [tweet.user.screen_name],
-                    title: `${tweet.user.name}: ${tweet.full_text}`.substr(0,80),
-                    type: "image"
+                await mediaReply(resp, {
+                    document: {
+                        object: "document",
+                        data: {},
+                        nodes: nodes
+                    },
+                    object: "value"
                 });
-
-                if (attachments.length > 1) {
-                    const nodes = attachments.splice(1).map((result: UploadResponse) => imageUrlToCaptionedNode(result.url));
-
-                    try {
-                        await mediaReply(resp, {
-                            document: {
-                                object: "document",
-                                data: {},
-                                nodes: nodes
-                            },
-                            object: "value"
-                        });
-                    } catch (e) {
-                        console.log(e)
-                    }
-                }
             } catch (e) {
                 console.log(e)
             }
-        });
-    })
-})
+        }
+    } catch (e) {
+        console.log(e)
+    }
+}
 
 function uploadFromUrl(url: string): Promise<UploadResponse> {
     return getMediaManager().post('/media/upload', {
@@ -121,13 +122,13 @@ function media(channelId: string, media: Media): Promise<Media> {
     return guilded.rest.post(`/channels/${channelId}/media`, media) as Promise<Media>;
 }
 
-async function mediaReply(media: Media, message: object): Promise<MediaReply> {
+function mediaReply(media: Media, message: object): Promise<MediaReply> {
     const doc = {
         channelId: media.channelId,
         contentId: media.id,
         contentType: "team_media",
         gameId: null,
-        id: Math.floor(Math.random() * 2**28), // too high makes the request fail, idk. ID sent by client seems random
+        id: Math.floor(Math.random() * 2 ** 28), // afaik this is completely random and matters not at all
         isContentReply: true,
         message: message,
         postId: media.id,
@@ -143,39 +144,53 @@ function send(channel: DMChannel | TextChannel | PartialChannel, message: object
     });
 }
 
-function interceptTwitter(message: Message, callback) {
-    const nodes = message.raw.content.document.nodes as Object[];
+/**
+ * grab message channel mentions
+ * @param message
+ */
+function parseChannels(message: Message): string[] {
+    const out = [];
 
-    nodes.filter((node: any) => node.type === 'paragraph').forEach((node: any) => {
-        node.nodes.forEach((leaf: any) => {
-            if (leaf.type === "link") {
-                const result = leaf.data.href.match(/https:\/\/twitter.com\/(.*)\/status\/([0-9]+)/i);
-
-                if (result) {
-                    callback(...result);
-                }
-            }
-        });
+    (message.raw.content.document.nodes as Object[]).filter((node: any) => node.type === 'paragraph').forEach((node: any) => {
+        out.push(...node.nodes.filter(leaf => leaf.type === "channel").map(leaf => leaf.data.channel.id));
     });
+
+    return out;
 }
 
 /**
- * grab last channel mention in the message
+ * grab message urls
  * @param message
  */
-function locateChannel(message: Message): string | undefined {
-    const nodes = message.raw.content.document.nodes as Object[];
-    let res = undefined;
+function parseUrls(message: Message): string[] {
+    const out = [];
 
-    nodes.filter((node: any) => node.type === 'paragraph').forEach((node: any) => {
-        node.nodes.forEach((leaf: any) => {
-            if (leaf.type === "channel") {
-                res = leaf.data.channel.id;
-            }
-        });
+    (message.raw.content.document.nodes as Object[]).filter((node: any) => node.type === 'paragraph').forEach((node: any) => {
+        out.push(...node.nodes.filter(leaf => leaf.type === "link").map(leaf => leaf.data.href));
     });
 
-    return res;
+    return out;
+}
+
+async function resolveHandler(message: Message): Promise<HandlerResult> {
+    const url = parseUrls(message)[0];
+
+    if (!url) {
+        return Promise.reject("no resource url.");
+    }
+
+    console.log(`intercepted url '${url}'`);
+
+    for (const handler of handlers) {
+        try {
+            console.log(`trying handler '${handler.id}'`);
+            return await handler.handle(url);
+        } catch (e) {
+            console.log(`handler returned failure result: ${e}`);
+        }
+    }
+
+    return Promise.reject("no handler.");
 }
 
 function getMediaManager(): any {
