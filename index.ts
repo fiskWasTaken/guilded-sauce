@@ -1,9 +1,11 @@
-import {Client} from "@guildedjs/guilded.js"
+import { Client } from "@guildedjs/guilded.js"
 import Message from "@guildedjs/guilded.js/types/structures/Message";
 import DMChannel from "@guildedjs/guilded.js/types/structures/channels/DMChannel";
 import TextChannel from "@guildedjs/guilded.js/types/structures/channels/TextChannel";
 import PartialChannel from "@guildedjs/guilded.js/types/structures/channels/PartialChannel";
 import {HandlerResult} from "./handlers/handler";
+import RestManager from "@guildedjs/guildedjs-rest";
+
 
 interface UploadResponse {
     url: string;
@@ -42,15 +44,12 @@ const handlers = options.handlers.map(handler => {
 guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
 guilded.on("messageCreate", async message => {
-    const targetChannel = parseChannels(message)[0];
+    const targetChannel = message.parsedContent.mentions.channels;
+    console.log(targetChannel);
 
-    if (!targetChannel) {
-        // no channel target, nothing to do
-        return;
-    }
-
+    if (!targetChannel) return;
     try {
-        await postMediaThread(targetChannel, await resolveHandler(message));
+        await postMediaThread(targetChannel[0], await resolveHandler(message));
     } catch (e) {
         console.log(e);
     }
@@ -146,20 +145,6 @@ function send(channel: DMChannel | TextChannel | PartialChannel, message: object
 }
 
 /**
- * grab message channel mentions
- * @param message
- */
-function parseChannels(message: Message): string[] {
-    const out = [];
-
-    (message.raw.content.document.nodes as Object[]).filter((node: any) => node.type === 'paragraph').forEach((node: any) => {
-        out.push(...node.nodes.filter(leaf => leaf.type === "channel").map(leaf => leaf.data.channel.id));
-    });
-
-    return out;
-}
-
-/**
  * grab message urls
  * @param message
  */
@@ -176,22 +161,19 @@ function parseUrls(message: Message): string[] {
 async function resolveHandler(message: Message): Promise<HandlerResult> {
     const url = parseUrls(message)[0];
 
-    if (!url) {
-        return Promise.reject("no resource url.");
-    }
-
+    if (!url) throw new Error("no resource url.");
     console.log(`intercepted url '${url}'`);
 
     for (const handler of handlers) {
         try {
             console.log(`trying handler '${handler.id}'`);
-            return await handler.handle(url);
+            return handler.handle(url);
         } catch (e) {
             console.log(`handler returned failure result: ${e}`);
         }
     }
 
-    return Promise.reject("no handler.");
+    throw new Error("no handler.");
 }
 
 function getMediaManager(): any {
@@ -199,10 +181,9 @@ function getMediaManager(): any {
      for some reason there was a problem importing the type so we do this weird shit
      in order to clone the prototype
      */
-    const con = (guilded.rest as Object).constructor as any;
-    const clone = new con();
-    clone.baseDomain = 'media.guilded.gg';
-    clone.apiURL = 'https://media.guilded.gg';
+    const clone = new RestManager({
+        "apiURL": 'https://media.guilded.gg'
+    });
     clone.cookieJar = guilded.rest.cookieJar;
     clone.token = guilded.rest.token;
     return clone;

@@ -5,6 +5,7 @@
   "dependencies": {
     "@guildedjs/guilded-api-typings": "^0.0.3",
     "@guildedjs/guilded.js": "^0.0.3",
+    "@guildedjs/guildedjs-rest": "0.0.3",
     "@types/node": "^14.14.31",
     "@types/node-fetch": "^2.5.8",
     "@types/twitter": "^1.7.0",
