@@ -45,8 +45,6 @@ guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
 guilded.on("messageCreate", async message => {
     const targetChannel = message.parsedContent.mentions.channels;
-    console.log(targetChannel);
-
     if (!targetChannel) return;
     try {
         await postMediaThread(targetChannel[0], await resolveHandler(message));
