@@ -1,7 +1,14 @@
 {
+  "name": "guilded-sauce",
+  "version": "1.0.0",
+  "description": "sauce-kun...",
+  "main": "index.ts",
   "scripts": {
-    "start": "ts-node index"
+    "start": "ts-node --trace-warnings index"
   },
+  "keywords": ["guilded", "sauce"],
+  "author": "fisk",
+  "license": "MIT",
   "dependencies": {
     "@guildedjs/guilded-api-typings": "^0.0.3",
     "@guildedjs/guilded.js": "^0.0.3",
