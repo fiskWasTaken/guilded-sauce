@@ -6,7 +6,7 @@ export default class TwitterHandler extends Handler {
     id: string = "twitter";
 
     async handle(url: string): Promise<HandlerResult> {
-        const result = url.match(/https:\/\/twitter.com\/(.*)\/status\/([0-9]+)/i);
+        const result = url.match(/https:\/\/twitter\.com\/(.*)\/status\/([0-9]+)/i);
 
         if (result) {
             return this.doHandle(result[1], result[2]);

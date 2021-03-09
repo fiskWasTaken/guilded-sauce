@@ -6,16 +6,16 @@ export default class E621Handler extends Handler {
 
     async handle(url: string): Promise<HandlerResult> {
         // should handle most mastodon format uris
-        const result = url.match(/^https:\/\/(e621|e926).net\/posts\/(\d*)/i);
+        const result = url.match(/^https:\/\/(e621\.net|e926\.net)\/posts\/(\d*)/i);
 
         if (result) {
-            return this.doHandle(result[1]);
+            return this.doHandle(result[1], result[2]);
         } else {
             return Promise.reject("not e621 url");
         }
     }
 
-    async doHandle(id: string): Promise<HandlerResult> {
+    async doHandle(host: string, id: string): Promise<HandlerResult> {
         // e621 hates non-browser UAs and blocks them all
         const result = await fetch(`https://e621.net/posts/${id}.json`, {
             headers: {
@@ -27,7 +27,7 @@ export default class E621Handler extends Handler {
 
         return {
             tags: [].concat(post.tags.artist).concat(post.tags.character).concat(post.tags.copyright),
-            description: `https://e621.net/posts/${id}`,
+            description: `https://${host}/posts/${id}`,
             media: [post.file.url],
             title: post.tags.artist[0] || "unknown artist"
         }
