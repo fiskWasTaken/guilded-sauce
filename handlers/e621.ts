@@ -6,7 +6,7 @@ export default class E621Handler extends Handler {
 
     async handle(url: string): Promise<HandlerResult> {
         // should handle most mastodon format uris
-        const result = url.match(/^https:\/\/e621.net\/posts\/(\d*)/i);
+        const result = url.match(/^https:\/\/(e621|e926).net\/posts\/(\d*)/i);
 
         if (result) {
             return this.doHandle(result[1]);
