@@ -136,12 +136,6 @@ function mediaReply(media: Media, message: object): Promise<MediaReply> {
     return guilded.rest.post(`/content/team_media/${media.id}/replies`, doc) as Promise<MediaReply>;
 }
 
-function send(channel: DMChannel | TextChannel | PartialChannel, message: object) {
-    guilded.rest.post(`/channels/${channel.id}/messages`, message).then((newMessage) => {
-        channel.messages.add(newMessage);
-    });
-}
-
 /**
  * grab message urls
  * @param message
@@ -187,30 +181,6 @@ function getMediaManager(): any {
     clone.cookieJar = guilded.rest.cookieJar;
     clone.token = guilded.rest.token;
     return clone;
-}
-
-/**
- * image url to message node
- * @param url
- */
-function imageUrlToNode(url: string): object {
-    return {
-        object: "block",
-        type: "image",
-        data: {
-            src: url,
-        },
-        nodes: [{
-            object: "text",
-            leaves: [
-                {
-                    object: "leaf",
-                    text: "",
-                    marks: []
-                }
-            ]
-        }]
-    }
 }
 
 function imageUrlToCaptionedNode(url: string, caption: string = ""): object {

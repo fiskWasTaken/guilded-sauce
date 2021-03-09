@@ -9,7 +9,7 @@ A simple image sauce bot for guilded.gg, designed to facilitate easier posting t
 
 ## Usage
 
-Currently, guilded-sauce only supports media channels. If a chat message containing both a link and a channel is posted, the bot will attempt to handle it, e.g.: `https://twitter.com/Dev_Voxy/status/1367612376397193218 #cute_art`
+Currently, guilded-sauce only supports media channels. If a chat message containing both a link and channel is posted, the bot will attempt to handle it, e.g.: `https://twitter.com/Dev_Voxy/status/1367612376397193218 #cute_art`
 
 If a post contains multiple images, the bot will create a reply with the other images in the set.
 

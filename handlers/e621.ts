@@ -5,7 +5,7 @@ export default class E621Handler extends Handler {
     id: string = "e621";
 
     async handle(url: string): Promise<HandlerResult> {
-        // should handle most mastodon format uris
+        // e621 and sister SFW site e926
         const result = url.match(/^https:\/\/(e621\.net|e926\.net)\/posts\/(\d*)/i);
 
         if (result) {

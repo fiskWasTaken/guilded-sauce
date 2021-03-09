@@ -19,7 +19,7 @@ export default class TwitterHandler extends Handler {
         return new Promise((resolve, reject) => {
             const twitter = new Twitter(this.options as Twitter.AccessTokenOptions);
 
-            twitter.get(`statuses/show/${id}`, {tweet_mode: 'extended'}, async function (error: any, tweet: ResponseData, response: any) {
+            twitter.get(`statuses/show/${id}`, {tweet_mode: 'extended'}, async function (error: any, tweet: ResponseData) {
                 if (error) {
                     reject(error);
                 } else {
