@@ -25,7 +25,7 @@ export default class TwitterHandler extends Handler {
                 } else {
                     resolve({
                         media: tweet.extended_entities.media.map(m => `${m.media_url_https}:orig`) as string[],
-                        description: `https://twitter.com/${tweet.user.screen_name}/status/${id} ${tweet.created_at}`,
+                        description: `https://twitter.com/${tweet.user.screen_name}/status/${id}`,
                         tags: [tweet.user.screen_name],
                         title: `${tweet.user.name}: ${tweet.full_text}`,
                     });

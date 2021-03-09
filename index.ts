@@ -165,7 +165,9 @@ async function resolveHandler(message: Message): Promise<HandlerResult> {
     for (const handler of handlers) {
         try {
             console.log(`trying handler '${handler.id}'`);
-            return handler.handle(url);
+            // nb: do not remove await here; if the handler fails then it'll throw, which is what we want.
+            // flow could be improved by checking if a handler SHOULD handle a method, but this works
+            return await handler.handle(url);
         } catch (e) {
             console.log(`handler returned failure result: ${e}`);
         }

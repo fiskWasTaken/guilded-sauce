@@ -1,6 +1,5 @@
 import {Handler, HandlerResult} from "./handler";
-import Twitter = require("twitter");
-import {ResponseData} from "twitter";
+
 const fetch = require('node-fetch');
 
 export default class MastodonHandler extends Handler {
@@ -23,7 +22,7 @@ export default class MastodonHandler extends Handler {
 
         return {
             tags: [json.account.acct],
-            description: `${json.url} ${json.created_at}`,
+            description: json.url,
             media: json.media_attachments.filter(attachment => attachment.type == "image").map(attachment => attachment.url),
             title: json.account.username
         }

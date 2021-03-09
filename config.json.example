@@ -1,6 +1,6 @@
 {
     "handlers": [
-        "twitter", "mastodon"
+        "twitter", "mastodon", "e621"
     ],
     "guilded": {
         "email": "",
