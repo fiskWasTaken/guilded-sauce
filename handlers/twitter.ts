@@ -9,13 +9,13 @@ export default class TwitterHandler extends Handler {
         const result = url.match(/https:\/\/twitter\.com\/(.*)\/status\/([0-9]+)/i);
 
         if (result) {
-            return this.doHandle(result[1], result[2]);
+            return this.resolve(result[1], result[2]);
         } else {
-            return Promise.reject("not a tweet");
+            return Promise.reject();
         }
     }
 
-    async doHandle(username: string, id: string): Promise<HandlerResult> {
+    async resolve(username: string, id: string): Promise<HandlerResult> {
         return new Promise((resolve, reject) => {
             const twitter = new Twitter(this.options as Twitter.AccessTokenOptions);
 

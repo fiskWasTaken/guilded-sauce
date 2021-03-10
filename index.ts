@@ -45,7 +45,8 @@ guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
 guilded.on("messageCreate", async message => {
     const targetChannel = message.parsedContent.mentions.channels;
-    if (!targetChannel) return;
+    if (!targetChannel[0]) return;
+
     try {
         await postMediaThread(targetChannel[0], await resolveHandler(message));
     } catch (e) {
@@ -159,7 +160,7 @@ async function resolveHandler(message: Message): Promise<HandlerResult> {
     for (const handler of handlers) {
         try {
             console.log(`trying handler '${handler.id}'`);
-            // nb: do not remove await here; if the handler fails then it'll throw, which is what we want.
+            // nb: do not remove await here; if the handler fails then it'll reject, which is what we want.
             // flow could be improved by checking if a handler SHOULD handle a method, but this works
             return await handler.handle(url);
         } catch (e) {

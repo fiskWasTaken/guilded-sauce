@@ -10,15 +10,14 @@ export default class MastodonHandler extends Handler {
         const result = url.match(/^(https?:\/\/.*\..*)\/@(.*)\/([0-9]+)/i);
 
         if (result) {
-            return this.doHandle(result[1], result[2], result[3]);
+            return this.resolve(result[1], result[2], result[3]);
         } else {
-            return Promise.reject("doesn't look like a mastodon instance url");
+            return Promise.reject();
         }
     }
 
-    async doHandle(host: string, username: string, id: string): Promise<HandlerResult> {
-        const result = await fetch(`${host}/api/v1/statuses/${id}`);
-        const json = await result.json();
+    async resolve(host: string, username: string, id: string): Promise<HandlerResult> {
+        const json = (await fetch(`${host}/api/v1/statuses/${id}`)).json();
 
         return {
             tags: [json.account.acct],
