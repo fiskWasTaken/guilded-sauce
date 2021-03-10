@@ -60,7 +60,7 @@ guilded.on("messageCreate", async message => {
 })
 
 async function postMediaThread(channel: string, result: HandlerResult) {
-    const attachments: UploadResponse[] = [];
+    const attachments: UploadResponse | Record<string, any>[] = [];
     const errors = [];
 
     for (const url of result.media) {
@@ -106,7 +106,7 @@ async function postMediaThread(channel: string, result: HandlerResult) {
     }
 }
 
-function uploadFromUrl(url: string): Promise<UploadResponse> {
+function uploadFromUrl(url: string): Promise<UploadResponse | Record<string, any>> {
     return getMediaManager().post('/media/upload', {
         dynamicMediaTypeId: "ContentMedia",
         mediaInfo: {
@@ -173,17 +173,13 @@ async function resolveHandler(message: Message): Promise<HandlerResult> {
     throw new Error();
 }
 
-function getMediaManager(): any {
-    /*
-     for some reason there was a problem importing the type so we do this weird shit
-     in order to clone the prototype
-     */
-    const clone = new RestManager({
+function getMediaManager(): RestManager {
+    const manager = new RestManager({
         "apiURL": 'https://media.guilded.gg'
     });
-    clone.cookieJar = guilded.rest.cookieJar;
-    clone.token = guilded.rest.token;
-    return clone;
+    manager.cookieJar = guilded.rest.cookieJar;
+    manager.token = guilded.rest.token;
+    return manager;
 }
 
 function imageUrlToCaptionedNode(url: string, caption: string = ""): object {
