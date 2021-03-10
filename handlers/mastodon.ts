@@ -17,7 +17,12 @@ export default class MastodonHandler extends Handler {
     }
 
     async resolve(host: string, username: string, id: string): Promise<HandlerResult> {
-        const json = (await fetch(`${host}/api/v1/statuses/${id}`)).json();
+        const json = await (await fetch(`${host}/api/v1/statuses/${id}`)).json();
+
+        if (json.error) {
+            console.log(`${host}/@${username}/${id}: ${json.error}`)
+            throw new Error(`This post may be private, or it was deleted.`);
+        }
 
         return {
             tags: [json.account.acct],

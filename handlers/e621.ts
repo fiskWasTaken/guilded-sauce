@@ -25,6 +25,10 @@ export default class E621Handler extends Handler {
 
         const post = await result.json().post;
 
+        if (!post) {
+            throw new Error("This post does not exist.");
+        }
+
         return {
             tags: [].concat(post.tags.artist).concat(post.tags.character).concat(post.tags.copyright),
             description: `https://${host}/posts/${id}`,

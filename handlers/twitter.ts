@@ -22,6 +22,8 @@ export default class TwitterHandler extends Handler {
             twitter.get(`statuses/show/${id}`, {tweet_mode: 'extended'}, async function (error: any, tweet: ResponseData) {
                 if (error) {
                     reject(error);
+                } else if (!tweet.extended_entities) {
+                    reject("This Tweet does not have any media.");
                 } else {
                     resolve({
                         media: tweet.extended_entities.media.map(m => `${m.media_url_https}:orig`) as string[],

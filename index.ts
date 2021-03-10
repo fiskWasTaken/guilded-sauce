@@ -1,10 +1,10 @@
-import { Client } from "@guildedjs/guilded.js"
+import {Client} from "@guildedjs/guilded.js"
 import Message from "@guildedjs/guilded.js/types/structures/Message";
-import DMChannel from "@guildedjs/guilded.js/types/structures/channels/DMChannel";
-import TextChannel from "@guildedjs/guilded.js/types/structures/channels/TextChannel";
-import PartialChannel from "@guildedjs/guilded.js/types/structures/channels/PartialChannel";
 import {HandlerResult} from "./handlers/handler";
 import RestManager from "@guildedjs/guildedjs-rest";
+import DMChannel from "@guildedjs/guilded.js/types/structures/channels/DMChannel";
+import PartialChannel from "@guildedjs/guilded.js/types/structures/channels/PartialChannel";
+import TextChannel from "@guildedjs/guilded.js/types/structures/channels/TextChannel";
 
 
 interface UploadResponse {
@@ -44,13 +44,18 @@ const handlers = options.handlers.map(handler => {
 guilded.on('ready', () => console.log(`Bot is successfully logged in`));
 
 guilded.on("messageCreate", async message => {
-    const targetChannel = message.parsedContent.mentions.channels;
-    if (!targetChannel[0]) return;
+    const targetChannel = message.parsedContent.mentions.channels[0];
+    if (!targetChannel) return;
 
     try {
-        await postMediaThread(targetChannel[0], await resolveHandler(message));
+        await postMediaThread(targetChannel, await resolveHandler(message));
     } catch (e) {
-        console.log(e);
+        if (e !== undefined) {
+            console.log(`bail: ${e.message}`);
+            await message.channel.send(`❌ ${e.message}`).catch(r => {
+                console.log(r);
+            });
+        }
     }
 })
 
@@ -67,7 +72,7 @@ async function postMediaThread(channel: string, result: HandlerResult) {
     }
 
     if (errors.length > 0) {
-        console.log(`${errors.length} errors encountered`)
+        console.log(`${errors.length} errors encountered; logging.`)
         errors.forEach(e => console.log(e));
     }
 
@@ -87,20 +92,14 @@ async function postMediaThread(channel: string, result: HandlerResult) {
         });
 
         if (attachments.length > 1) {
-            const nodes = attachments.splice(1).map((result: UploadResponse) => imageUrlToCaptionedNode(result.url));
-
-            try {
-                await mediaReply(resp, {
-                    document: {
-                        object: "document",
-                        data: {},
-                        nodes: nodes
-                    },
-                    object: "value"
-                });
-            } catch (e) {
-                console.log(e)
-            }
+            await mediaReply(resp, {
+                document: {
+                    object: "document",
+                    data: {},
+                    nodes: attachments.splice(1).map((result: UploadResponse) => imageUrlToCaptionedNode(result.url))
+                },
+                object: "value"
+            });
         }
     } catch (e) {
         console.log(e)
@@ -153,22 +152,23 @@ function parseUrls(message: Message): string[] {
 
 async function resolveHandler(message: Message): Promise<HandlerResult> {
     const url = parseUrls(message)[0];
+    if (!url) return Promise.reject();
 
-    if (!url) throw new Error("no resource url.");
     console.log(`intercepted url '${url}'`);
 
+    // cycle through our handlers, raise any non-empty promises into errors and break out.
+    // this is designed this way so we can fall back to a backup handler, if it's ever needed
     for (const handler of handlers) {
-        try {
-            console.log(`trying handler '${handler.id}'`);
-            // nb: do not remove await here; if the handler fails then it'll reject, which is what we want.
-            // flow could be improved by checking if a handler SHOULD handle a method, but this works
-            return await handler.handle(url);
-        } catch (e) {
-            console.log(`handler returned failure result: ${e}`);
-        }
+        console.log(`trying handler '${handler.id}'`);
+
+        const result = await handler.handle(url).catch(e => {
+            if (e !== undefined) throw e;
+        });
+
+        if (result) return result;
     }
 
-    throw new Error("no handler.");
+    throw new Error("This URL is not supported.");
 }
 
 function getMediaManager(): any {
