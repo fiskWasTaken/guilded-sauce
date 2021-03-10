@@ -50,7 +50,7 @@ guilded.on("messageCreate", async message => {
     try {
         await postMediaThread(targetChannel, await resolveHandler(message));
     } catch (e) {
-        if (e !== undefined) {
+        if (e.message) {
             console.log(`bail: ${e.message}`);
             await message.channel.send(`❌ ${e.message}`).catch(r => {
                 console.log(r);
@@ -154,7 +154,7 @@ async function resolveHandler(message: Message): Promise<HandlerResult> {
     const url = parseUrls(message)[0];
     if (!url) return Promise.reject();
 
-    console.log(`intercepted url '${url}'`);
+    console.log(`intercepted URL ${url}'`);
 
     // cycle through our handlers, raise any non-empty promises into errors and break out.
     // this is designed this way so we can fall back to a backup handler, if it's ever needed
@@ -168,7 +168,9 @@ async function resolveHandler(message: Message): Promise<HandlerResult> {
         if (result) return result;
     }
 
-    throw new Error("This URL is not supported.");
+    console.log("no handlers discovered for this URL.");
+    // we'd usually say something like "This url is not supported" but that might be annoying
+    throw new Error();
 }
 
 function getMediaManager(): any {

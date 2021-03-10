@@ -23,7 +23,8 @@ export default class E621Handler extends Handler {
             }
         });
 
-        const post = await result.json().post;
+        const json = await result.json();
+        const post = json.post;
 
         if (!post) {
             throw new Error("This post does not exist.");
